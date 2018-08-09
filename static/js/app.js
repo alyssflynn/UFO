@@ -3,210 +3,195 @@ var tableData = data;
 
 // YOUR CODE HERE!
 
-////////////////////////////////////////////////////
+//////////////////////////////////////////////////
 // HELPER FUNCTIONS
+
+var unpack = function(d) {
+  datetime = d.datetime
+  city = d.city.toUpperCase()
+  state = d.state.toUpperCase()
+  country = d.country.toUpperCase()
+  shape = d.shape
+  duration = d.durationMinutes //get_minutes(d.durationMinutes)
+  comments = d.comments
+  values = [datetime, city, state, country, shape, duration, comments];
+  return values;
+};
+
+///////////////////////////////////////////
+// Functions for converting durationMinutes
+
+var filterInt = function(value) {
+  if (/^(\-|\+)?([0-9]+|Infinity)$/.test(value))
+    return Number(value);
+  return NaN;
+}
+
+var get_minutes = function(duration) {
+  // var d = filterInt(duration)
+  // return d;
+  var d = duration.toString()
+      .replace("a ", "")
+      .replace("approx", "")
+      .replace("about ", "")
+      .replace( /\.+/g, "")
+      .replace( /:.+/g, " m")
+      .replace( /min.+/g, "m" )
+      .replace( /sec.+/g, "s" )
+      .split(" ");
+  
+  var units = d.slice(1,2).toString()
+      .replace("min", "m")
+      .replace("sec", "s")
+      .replace("hours", "h")
+      .replace("hour", "h")
+      // if (d.slice(1,2) == s
+
+  if (d.slice(0,1).parseInt == typeof Number) {
+      var n = Number(d.slice(0,1))
+  }
+  else { var n = d.slice(0,1) }
+  
+  return n + " " + units;
+
+  var d = duration.toString()
+      .replace( / a /g, "" )
+      .replace( / about /g, "" )
+      .replace( / around /g, "" )
+      .replace( / an /g, "" )
+      .split(" ");
+
+  var time = d.slice(0,1).toString()
+
+  var units = d.slice(1).toString()
+      .replace( /\./g, "" ) // replace decimal points with nothing
+      .replace( /min.+/g, "m" ) // replace misspelled words with mins
+      .replace( /sec.+/g, "s" ) // replace misspelled words with mins
+      ;
+      // .split(" ");
+      
+  var min = d.includes("m");
+  var sec = d.includes("s");
+
+  return time + " " + units + " <--| " + d + " | " + typeof d + " | min: " + min + " sec: " + sec;
+}
+////////////////////////////////////////////
+
 var get_key = function(d) { return d && d.key; };
 // var get_key = function(d) { return d && d.key; };
 
 var get_row_data = function(r) {
-    // var values = {
-    //     date: r.datetime,
-    //     city: r.city,
-    //     state: r.state,
-    //     country: r.country,
-    //     shape: r.shape,
-    //     duration: r.durationMinutes,
-    //     comments: r.comments
-    // }
-    values = [r.datetime, r.city, r.state, r.country, r.shape, r.durationMinutes, r.comments];
-    // console.log(row_data)
-    return values;
+  datetime = d.datetime
+  city = d.city.toUpperCase()
+  state = d.state.toUpperCase()
+  country = d.country.toUpperCase()
+  shape = d.shape
+  duration = d.durationMinutes //get_minutes(d.durationMinutes)
+  comments = d.comments
+  values = [datetime, city, state, country, shape, duration, comments];
+  return values;
 };
 
 var ident = function(d) { return d; };
 
+
+var filteredTable = function(key, value) {
+  tableData.filter( data => {
+    return data.key === value;
+  });
+}
 ///////////////////////////////////////////////////
 // FILL THE TABLE
+var table = d3.select("#ufo-table").select("tbody");
 
-// Select the table element
-var table = d3.select("#ufo-data");
-
-// Define function to add data
-var fill = function(data) {
-    var rows = table.select("tbody").selectAll("tr")
-        .data(data, get_key)
-
-    // row update
-    var cells = rows.selectAll("td")
-        .data(get_row_data);
-    
-    cells.attr("class", "update");
-
-    // Cells enter selection
-    cells.enter().append('td')
-      .style('opacity', 0.0)
-      .attr('class', 'enter')
-      .transition()
-      .delay(900)
-      .duration(500)
-      .style('opacity', 1.0);
-
-    cells.text(ident);
-}
-
-// var headers = table.select("thead").selectAll("th")
-//     .text("hi");
-
-// function getData(data, filter, selection) {
-//     var extData = [];
-//     for(var i=0; i<data.length; i++) {
-//         if (data[i][filter] == selection) { extData.push(data[i]) }
-//     }
-//     return extData
-// }
-
-// // Select table
-// var table = d3.select("#ufo-table");
-
-// // Fill table body
-// table.select("tbody").selectAll("tr")
-//     .data(tableData)
-//     .enter().append("tr")
-//     .selectAll("td")
-//         .data(function(row, i) {
-//             return (row, i);
-//         })
-
-
-// d3.selectAll("#filter-btn").on("click", function(d) {
-//     selection = this.text;
-//     updateTable();
-// });
-
-// console.log(headers)
-////////////////////////////////////////////////////////////////
-
+// Filter table dropdowns
+var options = {
+  datetime: [],
+  city: [],
+  state: [],
+  country: [],
+  shape: [],
+  durationMinutes: []
+};
+tableData.forEach((d) => {
+  var row = table.append("tr").attr("class", "table-row");
+  Object.entries(d).forEach(([key, value]) => {
+    var cell = row.append("td").attr("class", "table-data");
+    cell.text(value);
+    if (key in options) {
+      // console.log(key, value);
+      options[key].push(value);
+    }
+  });
+});
+// Filters for each header
+console.log(options)
+var options_set = Object.entries(options).forEach(
+  ([key, value]) => {
+    if (key!=='datetime') {
+      var select = d3.select("form").select("ul")
+      .append("li").attr("class", "filter list-group-item")
+      .append("label").attr("for", key)
+      .text("Choose a " + key + ":")
+      .append("select").attr("class", "select")
+      .attr("id", key)
+      .on("change", onchange);
+      
+      var unique_values = [...new Set(value)];
+      console.log(unique_values);
+      
+      var options = select.selectAll('option')
+      .data(unique_values).enter()
+      .append('option')
+      .text((d) => { return d; });
+      
+      function onchange() {
+        selectKey = d3.select("select").property("key")
+        selectValue = d3.select("select").property("value")
+        d3.select("form").select("ul")
+          .append("p")
+          .text(selectValue);
+        table.selectAll("tr").selectAll("td")
+          .data(tableData.filter( data => {
+            return data.selectKey === selectValue;
+          }))
+          .enter()
+            .text( d => {return d; } )
+        data = filteredTable(selectKey, selectValue);
+        console.log(data)
+        update_table(data);
+      }
+    }
+  }
+)
 
 var column_names = ["Date",	"City", "State", "Country", "Shape", "Duration", "Comments"];
+// var headers = ["Date",	"City", "State", "Country", "Shape", "Duration", "Comments"];
 var clicks = {city: 0, state: 0, country: 0, shape: 0, date: 0, comments: 0};
 
-// draw the table
-// d3.select("body").append("div")
-//   .attr("id", "container")
-// {/* <input class="form-control" id="datetime" type="text" placeholder="1/11/2011"> */}
-
-// Filter by city
-d3.select("form").select("ul").append("li")
-  .attr("class", "filter list-group-item")
-  .append("label")
-    .attr("for", "city")
-    .text("Enter a City")
-  .append("input")
-    .attr("class", "form-control")
-    .attr("id", "city")
-    .attr("type", "text")
-    .attr("placeholder", "Alaska");
-
-// Filter by State
-d3.select("form").select("ul").append("li")
-.attr("class", "filter list-group-item")
-.append("label")
-    .attr("for", "state")
-    .text("Enter a State")
-.append("input")
-    .attr("class", "form-control")
-    .attr("id", "state")
-    .attr("type", "text")
-    .attr("placeholder", "Anchorage");
-
-// Filter by Country
-d3.select("form").select("ul").append("li")
-.attr("class", "filter list-group-item")
-.append("label")
-    .attr("for", "country")
-    .text("Enter a Country")
-.append("input")
-    .attr("class", "form-control")
-    .attr("id", "country")
-    .attr("type", "text")
-    .attr("placeholder", "US");
-
-// Filter by shape
-d3.select("form").select("ul").append("li")
-.attr("class", "filter list-group-item")
-.append("label")
-    .attr("for", "shape")
-    .text("Enter a shape")
-.append("input")
-    .attr("class", "form-control")
-    .attr("id", "country")
-    .attr("type", "text")
-    .attr("placeholder", "light");
-    
-  
-var table = d3.select("#ufo-table").select("table");
-
-var headers = table.select("thead").selectAll("th")
-    .data(column_names)
-  .enter()
-    .text(function(d) { return d; });
-
-var trows = table.select("tbody").selectAll("tr")
-    .data(tableData)
-    .enter().append("td")
-        .text(function(d) {
-            console.log("hi", d);
-            return d;
-        });
-
-
-var rows, row_entries, row_entries_no_anchor, row_entries_with_anchor;
-  
 var update_table = function(data) { // loading data from server
-  
-  var table = d3.select("#ufo-table").select("table");
-
-  // draw table body with rows
-  //table.append("tbody");
+  var table = d3.select("#ufo-table").select("tbody");
 
   // data bind
-  rows = table.select("tbody").selectAll("tr")
-    .data(data, function(d){ return d; });
-    // .enter().append("tr");
-  
+  var rows = table.select("tbody").selectAll("tr")
+    .data( d => { return d; } );
+
   // enter the rows
   rows.enter().append("tr")
-  
+
   // enter td's in each row
-  row_entries = rows.selectAll("td")
-      .data(function(d) { 
-        var arr = [];
-        for (var k in d) {
-          if (d.hasOwnProperty(k)) {
-		    arr.push(d[k]);
-          }
+  var row_entries = rows.selectAll("td")
+    .data(function(d) { 
+      var arr = [];
+      for (var k in d) {
+        if (d.hasOwnProperty(k)) {
+        arr.push(d[k]);
         }
-        return [arr[3],arr[1],arr[2],arr[0]];
-      })
-    .enter()
-      .append("td") 
-
-  // draw row entries with no anchor 
-  row_entries_no_anchor = row_entries.filter(function(d) {
-    return (/https?:\/\//.test(d) == false)
-  })
-  row_entries_no_anchor.text(function(d) { return d; })
-
-  // draw row entries with anchor
-  row_entries_with_anchor = row_entries.filter(function(d) {
-    return (/https?:\/\//.test(d) == true)  
-  })
-  row_entries_with_anchor
-    .append("a")
-    .attr("href", function(d) { return d; })
-    .attr("target", "_blank")
-  .text(function(d) { return d; })
-    
+      }
+      return [arr[3],arr[1],arr[2],arr[0]];
+    })
+  .enter()
+    .append("td")   
     
   /**  search functionality **/
     d3.select("#search")
@@ -258,29 +243,15 @@ var update_table = function(data) { // loading data from server
           .enter()
             .append("td") 
 
-        // draw row entries with no anchor 
-        row_entries_no_anchor = row_entries.filter(function(d) {
-          return (/https?:\/\//.test(d) == false)
-        })
-        row_entries_no_anchor.text(function(d) { return d; })
-
-        // draw row entries with anchor
-        row_entries_with_anchor = row_entries.filter(function(d) {
-          return (/https?:\/\//.test(d) == true)  
-        })
-        row_entries_with_anchor
-          .append("a")
-          .attr("href", function(d) { return d; })
-          .attr("target", "_blank")
-        .text(function(d) { return d; })
-        
         // exit
         rows.exit().remove();
       })
     
+  headers = d3.selectAll(".table-head");
   /**  sort functionality **/
   headers
     .on("click", function(d) {
+      console.log(d)
       if (d == "City") {
         clicks.city++;
         // even number of clicks
@@ -421,7 +392,7 @@ var update_table = function(data) { // loading data from server
           });
         }
       } 
-      if (d == "Created On") {
+      if (d == "Date") {
         clicks.date++;
         if (clicks.date % 2 == 0) {
           // sort ascending: by date
@@ -508,146 +479,7 @@ var update_table = function(data) { // loading data from server
 // d3.select(self.frameElement).style("height", "780px").style("width", "1150px");	
 
 
-function get_row_data(r) {
-    row_data = [r.datetime, r.city, r.state, r.country, r.shape, r.durationMinutes, r.comments];
-    row_obj = { 
-        date: r.datetime,
-        city: r.city,
-        state: r.state,
-        country: r.country,
-        shape: r.shape,
-        duration: r.durationMinutes,
-        comments: r.comments
-    }
-    // console.log(row_data);
-    return row_data;
-
-};
-
-
-function add_row(r) {
-    // console.log(r)
-    var date = r.datetime;
-    var city = r.city;
-    var state = r.state;
-    var country = r.country;
-    var shape = r.shape;
-    var duration = r.durationMinutes;
-    var comments = r.comments;
-    row_data = [r.datetime, r.city, r.state, r.country, r.shape, r.durationMinutes, r.comments];
-    // console.log(row_data)
-    var row = d3.select("#ufo-table").select("tbody").append("tr")
-        .attr("class", "table-row");
-    row.enter().append("td")
-        .attr("class", "table-data")
-        .text(row_data);
-
-};
-
-var filterInt = function(value) {
-    if (/^(\-|\+)?([0-9]+|Infinity)$/.test(value))
-      return Number(value);
-    return NaN;
-}
-
-var get_minutes = function(duration) {
-    // var d = filterInt(duration)
-    // return d;
-    var d = duration.toString()
-        .replace("a ", "")
-        .replace("approx", "")
-        .replace("about ", "")
-        .replace( /\.+/g, "")
-        .replace( /:.+/g, " m")
-        .replace( /min.+/g, "m" )
-        .replace( /sec.+/g, "s" )
-        .split(" ");
-    
-    var units = d.slice(1,2).toString()
-        .replace("min", "m")
-        .replace("sec", "s")
-        .replace("hours", "h")
-        .replace("hour", "h")
-        // if (d.slice(1,2) == s
-
-    if (d.slice(0,1).parseInt == typeof Number) {
-        var n = Number(d.slice(0,1))
-    }
-    else { var n = d.slice(0,1) }
-    
-    return n + " " + units;
-
-    var d = duration.toString()
-        .replace( / a /g, "" )
-        .replace( / about /g, "" )
-        .replace( / around /g, "" )
-        .replace( / an /g, "" )
-        .split(" ");
-
-    var time = d.slice(0,1).toString()
-
-    var units = d.slice(1).toString()
-        .replace( /\./g, "" ) // replace decimal points with nothing
-        .replace( /min.+/g, "m" ) // replace misspelled words with mins
-        .replace( /sec.+/g, "s" ) // replace misspelled words with mins
-        ;
-        // .split(" ");
-        
-    var min = d.includes("m");
-    var sec = d.includes("s");
-  
-    return time + " " + units + " <--| " + d + " | " + typeof d + " | min: " + min + " sec: " + sec;
-}
-
-var unpack = function(d) {
-    datetime = d.datetime
-    city = d.city.toUpperCase()
-    state = d.state.toUpperCase()
-    country = d.country.toUpperCase()
-    shape = d.shape
-    duration = d.durationMinutes //get_minutes(d.durationMinutes)
-    comments = d.comments
-    values = [datetime, city, state, country, shape, duration, comments];
-    return values;
-};
-
-function init_table(td) {
-    var table = d3.select("#ufo-table").select("tbody");
-
-    var rows = table.selectAll("tr")
-        .data(data, get_key);
-
-    td.forEach(function(d) {
-        console.log(d, unpack(d))
-        // Create row
-        var new_row = table.append("tr").attr("class", "table-row");
-
-        // Fill cells in row
-        var new_cell = unpack(d).forEach(function(d) {
-            new_row.append("td")
-            .attr("class", "table-data")
-            .text(d);
-        });
-
-        // var new_cell = new_row.append("td").attr("class", "table-data")
-        //     //.attr("id", "ufo-datetime")
-        //     .text(d.datetime);
-        // var new_cell = new_row.append("td").attr("class", "table-data")
-        //     .text(d.city);
-        // var new_cell = new_row.append("td").attr("class", "table-data")
-        //     .text(d.state);
-        // var new_cell = new_row.append("td").attr("class", "table-data")
-        //     .text(d.country);
-        // var new_cell = new_row.append("td").attr("class", "table-data")
-        //     .text(d.shape);
-        // var new_cell = new_row.append("td").attr("class", "table-data")
-        //     .text(d.durationMinutes);
-        // var new_cell = new_row.append("td").attr("class", "table-data")
-        //     .text(d.comments);
-    });
-};
-
-init_table(tableData);
+// init_table(tableData);
 
 // sort when header clicked
 d3.selectAll(".table-head").on("click", function(d) {
@@ -656,6 +488,7 @@ d3.selectAll(".table-head").on("click", function(d) {
     // update_table();
     // order_by(selection);
     console.log(selection);
+    update_table(d);
 });
 
 // filter when 'filter table' button clicked
@@ -665,3 +498,7 @@ d3.select("#filter-btn").on("click", function(d) {
     // update_table();
     console.log(selection);
 });
+
+function filter_table(by) {
+  d3.select('#filter-btn').on('click')
+}
