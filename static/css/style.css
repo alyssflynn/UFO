@@ -73,6 +73,17 @@ select {
   outline: none;
 }
 
+/* select.dropdown li {
+  display: inline;
+  width: 100%;
+  color: #8e979f;
+  outline: none;
+} */
+
+select:invalid {
+  color: #8e979f;
+}
+
 #table-area th {
   text-align: center;
 }
