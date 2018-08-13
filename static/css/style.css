@@ -84,15 +84,6 @@ select:invalid {
   color: #8e979f;
 }
 
-.form-item {
-  &:not(:first-child) {
-    margin-top: 1em;
-  }
-  > :not(:first-child) {
-    margin-top: 0.25em;
-  }
-}
-
 #table-area th {
   text-align: center;
 }

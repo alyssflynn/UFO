@@ -13,12 +13,6 @@ var filterInt = function(value) {
   return nums;
 }
 
-var filterInt1 = function(value) {
-  if (/^(\-|\+)?([0-9]+|Infinity)$/.test(value))
-    return Number(value);
-  return NaN;
-}
-
 function toTitleCase(str) {
   return str.replace(/\w\S*/g, function(txt){
       return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
@@ -54,32 +48,8 @@ function stringCompare(a, b) {
   return a > b ? 1 : a == b ? 0 : -1;
 }
 
-function filter_data(data, key, value) {
-  var filteredData = data.filter( d => {
-    return d[key]===value;
-  })
-  return filteredData;
-}
-
-var selectedFilters = {
-  datetime: null,
-  city: null,
-  state: null,
-  country: null,
-  shape: null,
-  durationMinutes: null,
-};
-var addFilter = (d) => {
-  selectedFilters[d.k] = d.v;
-  return selectedFilters;
-}
-
-///////////////////////////////////////////////////
-
-
-
 ///////////////////////////////////////////////////////////
-// ADD FILTER DROPDOWNS
+// DROPDOWNS
 
 // Array object with unique values for each dropdown
 var dropdown_options = {
@@ -96,8 +66,6 @@ var dropdowns = Object.entries(dropdown_options).forEach(([key, values]) => {
     .append("li")
       .attr("class", "filter list-group-item")
       .style("display", "inline")
-    // .append('div')
-    //   .attr("class", "form-item")
     .append("label")
       .attr("class", "form-item__label")
       .attr("for", key)
@@ -105,25 +73,27 @@ var dropdowns = Object.entries(dropdown_options).forEach(([key, values]) => {
     .append("select")
       .attr("class", "form-control")
       .style("color", "#8e979f")
-      // .attr("class", "form-control form-item__element form-item__element--select")
       .attr("id", key)
-      // .property(require)
       .on("change", function(d) {
-        console.log(this);
-        console.log(this.selected);
-        select.property("selected", true);
-        console.log(this.selected);
-        select.property("selected", this.value);
-        console.log(this.selected);
-        select.property("selected", [this.value, this.id]);
-        console.log(this.selected);
-
-        console.log(this.id, this.value);
-        select.attr("value", this.value);
-        console.log(this.id, this.value);
-        // select.property("disabled", true);
-        console.log(arguments);
-        console.log(arguments[2][0][0].firstChild.data);
+        // Filter table data
+        var filterKey = this.id.toLowerCase();
+        var filterVal = this.value.toLowerCase();
+        newData = tableData.filter((d) => {
+          return d[filterKey]==filterVal;
+        });
+        // Remove old data
+        var rows = d3.select("tbody").selectAll("td");
+        rows.remove();
+        // Change properties of other dropdowns
+        d3.selectAll("select")
+          .style("color", "white")
+          .classed("selected", false);
+        select
+          .style("color", "grey")
+          .classed("selected", true)
+          .property("selected", true);
+        // Re-create table with new data
+        responsiveTable(newData);
       });
   // Fill option list
   var defaultOption = '-';
@@ -138,9 +108,13 @@ var dropdowns = Object.entries(dropdown_options).forEach(([key, values]) => {
         .property("selected", (d) => {return d===defaultOption; })
         .text((d) => { return d; });
 });
-//////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////
 
-// Create dynamic table
+var table = d3.select("#ufo-table");
+
+//////////////////////////////////////////////////////
+// CREATE TABLE
+
 function responsiveTable(data) {
     // Clear table
     d3.select("thead").remove().exit();
@@ -193,62 +167,24 @@ function responsiveTable(data) {
         .attr('data-th', (d) => { return d.name; })
         .text((d) => { return formatCellText(d); });
 };
+//////////////////////////////////////////////////////////////////
+// INPUT
 
-
-function filter_selected() {
-  console.log(this.id, this.value);
-  if (this.value !== '-') { 
-    // Get selection
-    var filter_key = this.id.toLowerCase();
-    var filter_val = this.value.toLowerCase();
-
+var inputTxt = d3.selectAll('input')
+  .on("keyup", function() {
     // Filter data
-    newData = data.filter((d) => {
-      return d[filter_key]===filter_val;
-      // filters = addFilter( { k: filterKey, v: filterVal } );
+    var filter = this.value;
+    newData = tableData.filter((d) => {
+      return d.datetime.includes(filter);
     });
-    console.log(data);
-
-  // Update table
-  // var rows = d3.select("#ufo-table").select("tbody").selectAll("tr")
-  //   .data(newData).enter()
-  //   .append("tr");
-  
-  // rows.filter((d) => { return d; })
-  
-  // Reset dropdowns
-  // d3.select('form').selectAll('option').selectAll('text').remove().exit();
-  // d3.select('form').selectAll('option').remove().exit();
-  
-  // Clear old data
-  // var oldData = d3.select("#ufo-table").select("tbody").selectAll("tr");
-  // oldData.remove().exit();
-  
-  // Update table with new data
-  responsiveTable(newData);
-  // responsiveTable(newData, update=true);
-  }
-}
-// };
-
-function filter_table(data, key, value) {
-  console.log(data);
-}
-
-// Initialize table
-responsiveTable(tableData, init=true);
-
-
-var inputElems = d3.selectAll('input')
-  .on("submit", function() {
-    alert(this.value);
+    console.log(this, this.value, newData)
+    // Remove old data
+    var rows = d3.select("tbody").selectAll("td");
+    rows.remove();
+    // Re-create table
+    responsiveTable(newData);
   });
 
-// var filterElems = d3.selectAll('.filter.list-group-item')
-//   .on("change", function() {
-//     console.log(this.value);
-//     // alert(this.value);
-//   });
 
 // Remove this filter button, make a new one
 d3.select("#filter-btn").remove().exit()
@@ -259,15 +195,10 @@ var filterButton = d3.select("form").append("button")
   .text("Filter Table")
   .on("click", function() {
     d3.event.preventDefault();
-
-    var selected = d3.selectAll("select[type=option]").selected(true)
-    console.log(selected);
-
-    console.log(arguments);
-    var f = d3.selectAll("input");
-    console.log(f);
-    // f.property("disabled", true);
-    var thing = d3.selectAll("select").property("selected", true);
+    d3.selectAll("select")
+      .style("color", "grey")
+      .classed("selected", false);
+    console.log("I do not like button")
   });
 
 var resetButton = d3.select("form").append("button")
@@ -275,43 +206,12 @@ var resetButton = d3.select("form").append("button")
   .attr("id", "reset")
   .text("Reset")
   .on("click", function() {
-    console.log('.');
+    d3.event.preventDefault();
+    d3.selectAll("select")
+      .style("color", "grey")
+      .classed("selected", false)
+      .property("disabled", false)
+    responsiveTable(tableData);
   });
-
-
-// d3.selection.prototype.selected = function(value) {
-//   console.log(value);
-//   console.log(arguments, arguments.length)
-//   return arguments.length < 1
-//     ? this.property("selected")
-//     : this.property("selected", !!value);
-// };
-
-// d3.selectAll("select[type=option]").selected(true)
-//   .on("change", (d) => {
-//     console.log(this);
-//     console.log(d);
-//     d3.select(this).property("disabled", true);
-//   });
-
-
-d3.selectAll('select').on("click", function() {
-  d3.select(this).style("color", "lightgrey");
-});
-
-// console.log(d3.selectAll("select[type=option]").selected(true));
-
-// d3.select('select').classList.append('has-placeholder');
-// document.querySelector('select').classList.add('has-placeholder');
-
-// d3.select('select').on("change", (e) => {
-//   e.currentTarget.classList.remove('has-placeholder');
-// });
-// document.querySelector('select').addEventListener('change', (e) => {
-  // e.currentTarget.classList.remove('has-placeholder');
-// });
-
-// filter when 'filter table' button clicked
-// var filterButton = d3.select("#filter-btn").on("click", function(d) {
-  // d3.event.preventDefault();
-  // console.log(d);
+  
+responsiveTable(tableData);
